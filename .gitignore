@@ -1,0 +1,19 @@
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Переменные окружения — обязательно!
+.env
+
+# Локальные файлы сборки/кэша
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Тесты/покрытие (если есть)
+coverage/
+.nyc_output/
