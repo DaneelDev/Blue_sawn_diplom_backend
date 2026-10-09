@@ -14,11 +14,8 @@ app.use(bodyParser.json());
 
 // Создание пула соединений с PostgreSQL
 const pool = new Pool({
-  user: process.env.DB_USER || "postgres",
-  host: process.env.DB_HOST || "localhost",
-  database: process.env.DB_NAME || "Blue_swan",
-  password: process.env.DB_PASSWORD,
-  port: process.env.DB_PORT || 5432,
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
 });
 
 // Блок для получения списка продуктов
@@ -31,7 +28,7 @@ app.get("/products", async (req, res) => {
 
     // Добавление фильтра по категории
     if (category) {
-      query += " WHERE category = \$1";
+      query += " WHERE category = $1";
       values.push(category);
     }
 
@@ -92,7 +89,7 @@ app.post("/orders", async (req, res) => {
 
     const query = `
       INSERT INTO orders (recipient_name, recipient_phone, recipient_address, products, total_quantity, total_price)
-      VALUES (\$1, \$2, \$3, \$4, \$5, \$6) RETURNING *;
+      VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;
     `;
 
     const values = [
@@ -133,7 +130,7 @@ app.post("/send-email", async (req, res) => {
   try {
     // Сохраняю код в базе данных
     await pool.query(
-      "INSERT INTO verification_codes (email, verification_code) VALUES (\$1, \$2)",
+      "INSERT INTO verification_codes (email, verification_code) VALUES ($1, $2)",
       [email, code],
     );
 
@@ -164,7 +161,7 @@ app.post("/verify-code", async (req, res) => {
   try {
     // Проверяем код в базе данных
     const result = await pool.query(
-      "SELECT * FROM verification_codes WHERE verification_code = \$1",
+      "SELECT * FROM verification_codes WHERE verification_code = $1",
       [code],
     );
 
@@ -174,7 +171,7 @@ app.post("/verify-code", async (req, res) => {
 
       // Удаляем код после успешной проверки
       await pool.query(
-        "DELETE FROM verification_codes WHERE verification_code = \$1",
+        "DELETE FROM verification_codes WHERE verification_code = $1",
         [code],
       );
 
@@ -217,7 +214,7 @@ app.get("/users", async (req, res) => {
 
   try {
     const result = await pool.query(
-      "SELECT name, phone_number, address, email FROM users WHERE email = \$1",
+      "SELECT name, phone_number, address, email FROM users WHERE email = $1",
       [email],
     );
 
@@ -265,7 +262,7 @@ app.post("/users", async (req, res) => {
 
     // Проверяем, есть ли пользователь с таким email
     const existingUser = await pool.query(
-      "SELECT * FROM users WHERE email = \$1",
+      "SELECT * FROM users WHERE email = $1",
       [email],
     );
 
@@ -273,8 +270,8 @@ app.post("/users", async (req, res) => {
       // Обновляем данные пользователя, если он уже есть
       const updateQuery = `
         UPDATE users
-        SET name = \$1, phone_number = \$2, address = \$3
-        WHERE email = \$4
+        SET name = $1, phone_number = $2, address = $3
+        WHERE email = $4
         RETURNING *;
       `;
       const values = [
@@ -289,7 +286,7 @@ app.post("/users", async (req, res) => {
       // Вставляем нового пользователя
       const insertQuery = `
         INSERT INTO users (name, email, phone_number, address)
-        VALUES (\$1, \$2, \$3, \$4)
+        VALUES ($1, $2, $3, $4)
         RETURNING *;
       `;
       const values = [
